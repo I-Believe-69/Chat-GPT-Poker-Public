@@ -1,7 +1,78 @@
 import tkinter as tk
 import time
 
-root = tk.Tk()
+class Timer:
+    def __init__(self, master, minutes=0, seconds=0):
+        self.master = master
+        self.minutes = minutes
+        self.seconds = seconds
+        self.paused = False
+        self.paused_time = None
+        self.current_time = None
+        self.remaining = None
+        self.start_time = None
+        self.timer_label = tk.Label(self.master, text=self._format_time(self.minutes, self.seconds))
+        self.timer_label.grid(row=0, column=1, padx=5, pady=5)
+        self.start_button = tk.Button(self.master, text="Start", command=self.start)
+        self.start_button.grid(row=1, column=0, padx=5, pady=5)
+        self.pause_button = tk.Button(self.master, text="Pause", command=self.pause)
+        self.pause_button.grid(row=1, column=1, padx=5, pady=5)
+        self.resume_button = tk.Button(self.master, text="Resume", command=self.resume, state=tk.DISABLED)
+        self.resume_button.grid(row=1, column=2, padx=5, pady=5)
+        self.reset_button = tk.Button(self.master, text="Reset", command=self.reset)
+        self.reset_button.grid(row=1, column=3, padx=5, pady=5)
+        
+    def _format_time(self, minutes, seconds):
+        return f"{minutes:02d}:{seconds:02d}"
+
+    def _update(self):
+        self.remaining = self.current_time - time.time()
+        if self.remaining <= 0:
+            self.timer_label.configure(text=self._format_time(self.minutes, self.seconds))
+            self.reset()
+        else:
+            self.timer_label.configure(text=self._format_time(*time.gmtime(self.remaining)[3:]))
+            self.master.after(1000, self._update)
+
+    def start(self):
+        self.start_time = time.time()
+        self.current_time = self.start_time + self.minutes * 60 + self.seconds
+        self._update()
+        self.start_button.config(state=tk.DISABLED)
+        self.resume_button.config(state=tk.DISABLED if not self.paused else tk.NORMAL)
+        self.pause_button.config(state=tk.NORMAL)
+
+    def pause(self):
+        self.paused = True
+        self.paused_time = time.time()
+        self.start_button.config(state=tk.DISABLED)
+        self.resume_button.config(state=tk.NORMAL)
+        self.pause_button.config(state=tk.DISABLED)
+
+    def resume(self):
+        self.paused = False
+        paused_duration = time.time() - self.paused_time
+        self.current_time += paused_duration
+        self.start_time += paused_duration
+        self._update()
+        self.start_button.config(state=tk.DISABLED)
+        self.resume_button.config(state=tk.DISABLED)
+        self.pause_button.config(state=tk.NORMAL)
+
+    def reset(self):
+        self.start_time = None
+        self.paused = False
+        self.paused_time = None
+        self.current_time = None
+        self.remaining = None
+        self.timer_label.configure(text=self._format_time(self.minutes, self.seconds))
+        self.start_button.config(state=tk.NORMAL)
+        self.resume_button.config(state=tk.DISABLED)
+        self.pause_button.config(state=tk.DISABLED)
+
+
+if __name__ == '__main__':
+    root = tk.Tk()
 root.geometry("1920x1080")
 root.title("Poker Timer")
 
